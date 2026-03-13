@@ -1,0 +1,81 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String               @id @default(uuid()) @db.Uuid
+  name         String
+  email        String               @unique
+  passwordHash String               @map("password_hash")
+  role         String               @default("USER")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  profile      ProfessionalProfile?
+
+  @@map("users")
+}
+
+model ProfessionalProfile {
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @unique @map("user_id") @db.Uuid
+  cityId          String          @map("city_id") @db.Uuid
+  experienceLevel String          @map("experience_level")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  user            User            @relation(fields: [userId], references: [id])
+  city            City            @relation(fields: [cityId], references: [id])
+  salaryHistories SalaryHistory[]
+  profileStacks   ProfileStack[]
+
+  @@map("professional_profiles")
+}
+
+model Stack {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String         @unique
+  createdAt     DateTime       @default(now()) @map("created_at")
+  profileStacks ProfileStack[]
+
+  @@map("stacks")
+}
+
+model City {
+  id                  String                @id @default(uuid()) @db.Uuid
+  name                String
+  state               String
+  country             String
+  createdAt           DateTime              @default(now()) @map("created_at")
+  ProfessionalProfile ProfessionalProfile[]
+
+  @@index([name])
+  @@map("cities")
+}
+
+model ProfileStack {
+  profileId String              @map("profile_id") @db.Uuid
+  stackId   String              @map("stack_id") @db.Uuid
+  profile   ProfessionalProfile @relation(fields: [profileId], references: [id])
+  stack     Stack               @relation(fields: [stackId], references: [id])
+
+  @@id([profileId, stackId])
+  @@index([profileId])
+  @@index([stackId])
+  @@map("profile_stacks")
+}
+
+model SalaryHistory {
+  id        String              @id @default(uuid()) @db.Uuid
+  profileId String              @map("profile_id") @db.Uuid
+  salary    Int
+  createdAt DateTime            @default(now()) @map("created_at")
+  profile   ProfessionalProfile @relation(fields: [profileId], references: [id])
+
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("salary_history")
+}
