@@ -12,10 +12,15 @@ import { salaryRoutes } from './modules/salaries/routes/salary.routes';
 import { analyticsRoutes } from './modules/analytics/routes/analytics.routes';
 
 export const app = fastify({
+  disableRequestLogging: true,
   logger: {
     transport: {
       target: 'pino-pretty',
-    },
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname'
+      }
+    }
   },
 });
 
@@ -56,6 +61,10 @@ app.register(swaggerUi, {
 });
 
 app.setErrorHandler(errorMiddleware);
+
+app.addHook('onRequest', async (request) => {
+  request.log.info(`[${request.method}] ${request.url}`);
+});
 
 // --- Rotas da API ---
 app.register(authRoutes, { prefix: '/v1/auth' });
