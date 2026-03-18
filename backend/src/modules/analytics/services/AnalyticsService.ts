@@ -85,7 +85,9 @@ export class AnalyticsService {
       SELECT s.name as stack, mv.average_salary, mv.total_records 
       FROM mv_salary_by_stack mv
       JOIN stacks s ON s.id = mv.stack_id
-      WHERE mv.total_records >= 5
+      WHERE mv.total_records >= (
+        SELECT MAX(total_records) * 0.2 FROM mv_salary_by_stack
+      )
       ORDER BY mv.average_salary DESC;
     `);
 
