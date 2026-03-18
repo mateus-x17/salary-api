@@ -15,6 +15,6 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.get('/salary/stack', controller.getByStack.bind(controller));
   app.get('/salary/city', controller.getByCity.bind(controller));
   app.get('/salary/filter', controller.getFiltered.bind(controller));
-  
+
   app.get('/ranking/stacks', controller.getRanking.bind(controller));
 }
