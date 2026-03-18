@@ -30,4 +30,13 @@ export class UsersController {
 
     return reply.status(200).send(successResponse(users));
   }
+
+  async count(request: FastifyRequest, reply: FastifyReply) {
+    // if (request.user.role !== 'ADMIN') {
+    //   throw new AppError('Acesso negado', 'FORBIDDEN', 403);
+    // }
+
+    const count = await prisma.user.count();
+    return reply.status(200).send(successResponse({ count }));
+  }
 }
