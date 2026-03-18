@@ -161,6 +161,9 @@ class ApiService {
       createdAt: string;
     }[]>('/admin/users');
   }
+  async countUsers() {
+    return this.request<{ count: number }>('/admin/users/count');
+  }
 
   // ── Resources ──
   async listCities() {
