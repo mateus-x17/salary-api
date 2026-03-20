@@ -7,8 +7,10 @@ import {
   Code2,
   Clock,
   Plus,
+  Mail,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { StacksModal } from '../components/StacksModal';
 import './Profile.css';
 
@@ -18,6 +20,8 @@ interface ProfileData {
   experienceLevel: string;
   stacks: string[];
   currentSalary: number;
+  email: string;
+  nome: string;
 }
 
 interface SalaryEntry {
@@ -25,13 +29,14 @@ interface SalaryEntry {
   createdAt: string;
 }
 
-// Interface usada pelo modal (precisa de id + name)
 interface StackItem {
   id: string;
   name: string;
 }
 
 export function ProfilePage() {
+  const { user } = useAuth();
+
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [history, setHistory] = useState<SalaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,13 +52,14 @@ export function ProfilePage() {
       setProfile(p);
       setHistory(Array.isArray(h) ? h : []);
     } catch {
-      // Fallback demo
       setProfile({
-        userId: '1',
+        userId: user?.id ?? '1',
         city: 'São Paulo',
         experienceLevel: 'SENIOR',
         stacks: ['React', 'Node.js', 'TypeScript'],
         currentSalary: 12000,
+        email: user?.email ?? 'demo@email.com',
+        nome: user?.nome ?? 'Usuário',
       });
       setHistory([
         { salary: 7000, createdAt: '2024-01-10T00:00:00Z' },
@@ -71,12 +77,10 @@ export function ProfilePage() {
   }, []);
 
   async function handleOpenModal() {
-    // Busca as stacks do perfil com id + name para passar ao modal
     try {
       const stacks = await api.getProfileStacks();
       setProfileStacks(stacks);
     } catch {
-      // Se falhar, usa os nomes do profile como fallback (sem id real)
       setProfileStacks(
         (profile?.stacks || []).map((name, i) => ({ id: String(i), name }))
       );
@@ -84,7 +88,6 @@ export function ProfilePage() {
     setIsModalOpen(true);
   }
 
-  // Chamado pelo modal após qualquer adição ou remoção
   async function handleStacksChanged() {
     await loadProfile();
   }
@@ -103,6 +106,11 @@ export function ProfilePage() {
   };
 
   const maxSalary = Math.max(...history.map((h) => h.salary), 1);
+
+  // Nome e email vêm do contexto de autenticação (fonte primária),
+  // com fallback para os dados do perfil caso o contexto não tenha
+  const displayName = user?.nome || profile?.nome || '—';
+  const displayEmail = user?.email || profile?.email || '';
 
   if (loading) {
     return (
@@ -123,7 +131,11 @@ export function ProfilePage() {
             <User size={32} strokeWidth={1.5} />
           </div>
           <div className="profile__info">
-            <h2 className="profile__name">Meu Perfil</h2>
+            <h2 className="profile__name">{displayName}</h2>
+            <div className="profile__email">
+              <Mail size={13} />
+              <span>{displayEmail}</span>
+            </div>
             <p className="profile__sub">Profissional de Tecnologia</p>
           </div>
         </div>
@@ -135,11 +147,17 @@ export function ProfilePage() {
           </div>
           <div className="profile__detail">
             <Briefcase size={16} />
-            <span>{profile?.experienceLevel ? expLabels[profile.experienceLevel] || profile.experienceLevel : 'N/A'}</span>
+            <span>
+              {profile?.experienceLevel
+                ? expLabels[profile.experienceLevel] || profile.experienceLevel
+                : 'N/A'}
+            </span>
           </div>
           <div className="profile__detail profile__detail--salary">
             <DollarSign size={16} />
-            <span className="profile__salary-value">{profile?.currentSalary ? formatCurrency(profile.currentSalary) : 'N/A'}</span>
+            <span className="profile__salary-value">
+              {profile?.currentSalary ? formatCurrency(profile.currentSalary) : 'N/A'}
+            </span>
             <span className="profile__salary-label">/ mês</span>
           </div>
         </div>

@@ -60,6 +60,7 @@
 }
 
 .profile__info {
+  padding-top: 48px;
   padding-bottom: var(--space-2);
 }
 
@@ -69,9 +70,24 @@
   color: var(--color-gray-900);
 }
 
+.profile__email {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-gray-400);
+  margin-top: 2px;
+}
+
+.profile__email svg {
+  color: var(--color-gray-400);
+  flex-shrink: 0;
+}
+
 .profile__sub {
   font-size: var(--text-sm);
   color: var(--color-gray-500);
+  margin-top: var(--space-1);
 }
 
 .profile__details {

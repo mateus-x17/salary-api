@@ -76,6 +76,8 @@ class ApiService {
       experienceLevel: string;
       stacks: string[];
       currentSalary: number;
+      email: string;
+      nome: string;
     }>('/profile');
   }
 

@@ -4,7 +4,7 @@ import { api } from '../services/api';
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: { email: string; role: string } | null;
+  user: { email: string; role: string, id: string, nome: string } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -14,16 +14,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<{ email: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; role: string, id: string, nome: string } | null>(null);
 
   useEffect(() => {
     const token = api.getToken();
     if (token) {
       // Attempt to validate token by fetching profile
       api.getProfile()
-        .then(() => {
+        .then((profile) => {
           setIsAuthenticated(true);
-          setUser({ email: '', role: 'USER' });
+          setUser({ email: profile.email, role: 'USER', id: profile.userId, nome: profile.nome });
         })
         .catch(() => {
           api.logout();
@@ -36,8 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await api.login(email, password);
+    const profile = await api.getProfile();
     setIsAuthenticated(true);
-    setUser({ email, role: 'USER' });
+    setUser({ email: profile.email, role: 'USER', id: profile.userId, nome: profile.nome });
   };
 
   const logout = () => {
