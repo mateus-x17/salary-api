@@ -1,0 +1,66 @@
+/* LoadingState.css - Design Moderno (Premium) */
+.loading-state-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+  padding: 2rem;
+}
+
+.loader {
+  display: inline-block;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+}
+
+.loader-ring {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  margin: 5px;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  animation: loader-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: #6366F1 transparent transparent transparent; /* Indigo premium */
+}
+.loader-ring:nth-child(1) {
+  animation-delay: -0.45s;
+}
+.loader-ring:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.loader-ring:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+@keyframes loader-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: #4B5563; /* Gray-600 */
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  animation: pulse-text 2s infinite ease-in-out;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Suporte para Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .loading-message {
+    color: #9CA3AF;
+  }
+}
