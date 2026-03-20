@@ -81,7 +81,7 @@ export class ProfileService {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
-        user: true, // <-- adicione o join com User
+        user: true, // <-- adiciona o join com User
       },
     });
 
