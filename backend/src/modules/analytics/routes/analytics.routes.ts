@@ -17,4 +17,10 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.get('/salary/filter', controller.getFiltered.bind(controller));
 
   app.get('/ranking/stacks', controller.getRanking.bind(controller));
+  app.get('/ranking/cities', controller.getCitiesRankings.bind(controller));
+
+  // Endpoints granulares para gráficos dinâmicos
+  app.get('/charts/by-level', controller.getChartByLevel.bind(controller));
+  app.get('/charts/by-city', controller.getChartByCity.bind(controller));
+  app.get('/charts/by-stack', controller.getChartByStack.bind(controller));
 }

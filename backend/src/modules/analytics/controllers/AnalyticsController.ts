@@ -41,13 +41,54 @@ export class AnalyticsController {
 
   async getFiltered(request: FastifyRequest, reply: FastifyReply) {
     const { stackId, cityId, experienceLevel } = request.query as any;
-    
-    const data = await this.service.getFilteredSalary({ stackId, cityId, experienceLevel });
-    return reply.status(200).send(successResponse(data));
+    try {
+      const data = await this.service.getFilteredSalary({ stackId, cityId, experienceLevel });
+      return reply.status(200).send(successResponse(data));
+    } catch (err: any) {
+      // Log detalhado para diagnóstico do erro real do Postgres
+      console.error('[AnalyticsController.getFiltered] ERRO:', err?.message);
+      console.error('[AnalyticsController.getFiltered] STACK:', err?.stack);
+      throw err;
+    }
   }
 
   async getRanking(request: FastifyRequest, reply: FastifyReply) {
     const data = await this.service.getStacksRanking();
+    return reply.status(200).send(successResponse(data));
+  }
+
+  async getCitiesRankings(request: FastifyRequest, reply: FastifyReply) {
+    const [above, below] = await Promise.all([
+      this.service.getCitiesAboveGlobal(),
+      this.service.getCitiesBelowGlobal()
+    ]);
+    return reply.status(200).send(successResponse({ above, below }));
+  }
+
+  /**
+   * Dados granulares: média por stack filtrado por nível de experiência
+   */
+  async getChartByLevel(request: FastifyRequest, reply: FastifyReply) {
+    const { experienceLevel } = request.query as any;
+    const data = await this.service.getSalaryByStackAndLevel(experienceLevel);
+    return reply.status(200).send(successResponse(data));
+  }
+
+  /**
+   * Dados granulares: média por stack filtrado por cidade
+   */
+  async getChartByCity(request: FastifyRequest, reply: FastifyReply) {
+    const { cityId } = request.query as any;
+    const data = await this.service.getSalaryByStackAndCity(cityId);
+    return reply.status(200).send(successResponse(data));
+  }
+
+  /**
+   * Dados granulares: média por nível filtrado por stack
+   */
+  async getChartByStack(request: FastifyRequest, reply: FastifyReply) {
+    const { stackId } = request.query as any;
+    const data = await this.service.getSalaryByLevelAndStack(stackId);
     return reply.status(200).send(successResponse(data));
   }
 }
