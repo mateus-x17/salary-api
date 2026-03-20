@@ -104,26 +104,104 @@ export class ProfileService {
    * Atualiza os dados básicos do perfil. O salário não é alterado por aqui.
    */
   async updateProfile(userId: string, data: UpdateProfileDTO) {
-    const profile = await prisma.professionalProfile.findUnique({ where: { userId } });
+    const profile = await prisma.professionalProfile.findUnique({ 
+      where: { userId },
+      include: {
+        user: true,
+        salaryHistories: { orderBy: { createdAt: 'desc' }, take: 1 }
+      }
+    });
 
     if (!profile) {
       throw new AppError('Perfil não encontrado', 'PROFILE_NOT_FOUND', 404);
     }
 
-    if (data.cityId) {
-      const cityExists = await prisma.city.findUnique({ where: { id: data.cityId } });
-      if (!cityExists) {
-        throw new AppError('Cidade não encontrada', 'CITY_NOT_FOUND', 404);
+    let cityRecord = undefined;
+    if (data.city) {
+      cityRecord = await prisma.city.findFirst({
+        where: { name: { equals: data.city, mode: 'insensitive' } },
+      });
+      if (!cityRecord) {
+        cityRecord = await prisma.city.create({
+          data: { name: data.city || 'Desconhecida', state: 'N/A', country: 'Brasil' },
+        });
       }
     }
 
-    await prisma.professionalProfile.update({
-      where: { userId },
-      data: {
-        cityId: data.cityId,
-        experienceLevel: data.experienceLevel,
-      },
+    let stackRecords: any[] = [];
+    if (data.stacks) {
+      stackRecords = await Promise.all(
+        data.stacks.map(async (stackName: string) => {
+          let stackRecord = await prisma.stack.findFirst({
+            where: { name: { equals: stackName, mode: 'insensitive' } },
+          });
+          if (!stackRecord) {
+            stackRecord = await prisma.stack.create({ data: { name: stackName } });
+          }
+          return stackRecord;
+        })
+      );
+    }
+
+    const bcrypt = require('bcrypt'); // Import dinâmico
+
+    await prisma.$transaction(async (tx) => {
+      let updateData: any = {};
+      if (data.name) updateData.name = data.name;
+      if (data.email) updateData.email = data.email;
+      if (data.password) {
+        const salt = await bcrypt.genSalt(10);
+        updateData.passwordHash = await bcrypt.hash(data.password, salt);
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: updateData
+        });
+      }
+
+      let profileUpdateData: any = {};
+      if (cityRecord) profileUpdateData.cityId = cityRecord.id;
+      if (data.experienceLevel) profileUpdateData.experienceLevel = data.experienceLevel;
+
+      if (Object.keys(profileUpdateData).length > 0) {
+        await tx.professionalProfile.update({
+          where: { id: profile.id },
+          data: profileUpdateData
+        });
+      }
+
+      if (data.salary !== undefined) {
+        const currentSalary = profile.salaryHistories[0]?.salary || 0;
+        if (Number(data.salary) !== currentSalary) {
+          await tx.salaryHistory.create({
+            data: {
+              profileId: profile.id,
+              salary: Number(data.salary)
+            }
+          });
+        }
+      }
+
+      if (data.stacks) {
+        await tx.profileStack.deleteMany({
+          where: { profileId: profile.id }
+        });
+
+        for (const st of stackRecords) {
+          await tx.profileStack.create({
+            data: { profileId: profile.id, stackId: st.id }
+          });
+        }
+      }
     });
+
+    try {
+      await refreshAnalyticsViews();
+    } catch (err) {
+      console.warn('Erro ao atualizar MVs', err);
+    }
   }
 
   /**

@@ -12,4 +12,6 @@ export async function usersAdminRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: [authMiddleware] }, controller.listAdmin.bind(controller));
   // GET /v1/admin/users/count
   app.get('/count', { preHandler: [authMiddleware] }, controller.count.bind(controller));
+  // PUT /v1/admin/users/:id
+  app.put('/:id', { preHandler: [authMiddleware] }, controller.updateUser.bind(controller));
 }
