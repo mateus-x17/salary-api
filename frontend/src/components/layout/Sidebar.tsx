@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -10,16 +10,21 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import './Sidebar.css';
 
-const navItems = [
+const navItemsADM = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/users', icon: Users, label: 'Usuários' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
+const navItemsUSU = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/profile', icon: User, label: 'Perfil' },
+];
+
 export function Sidebar() {
-  const { logout } = useAuth();
-  const location = useLocation();
+  const { logout, user } = useAuth();
 
   return (
     <aside className="sidebar">
@@ -37,15 +42,17 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="sidebar__nav">
         <span className="sidebar__section-label">Menu</span>
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {/* Renderiza os itens de navegação com base no role de usuário logado */}
+        {(user?.role === 'ADMIN' ? navItemsADM : navItemsUSU).map((item) => (
           <NavLink
-            key={to}
-            to={to}
-            className={`sidebar__link ${location.pathname === to ? 'sidebar__link--active' : ''}`}
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+            }
           >
-            <span className="sidebar__link-indicator" />
-            <Icon size={20} strokeWidth={1.8} />
-            <span>{label}</span>
+            <item.icon size={20} strokeWidth={1.8} />
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>
