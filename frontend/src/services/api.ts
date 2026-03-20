@@ -26,8 +26,9 @@ class ApiService {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const isBodyless = !options.body;
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isBodyless ? {} : { 'Content-Type': 'application/json' }),
       ...((options.headers as Record<string, string>) || {}),
     };
 
