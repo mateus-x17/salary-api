@@ -1,0 +1,214 @@
+/* ============================================================
+   ANALYTICS FILTERS — Light Theme com tokens de design
+   ============================================================ */
+
+/* Painel colapsável de filtros */
+.analytics__filters-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  opacity: 0;
+}
+
+.analytics__filters-panel.open {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.analytics__filters {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--surface-card);
+  border-radius: var(--radius-xl);
+  border: var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.filter-result-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 0.5rem;
+}
+
+.filter-result-label {
+  font-size: 0.85rem;
+  color: var(--color-primary-600);
+  font-weight: 500;
+}
+
+.filter-result-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary-700);
+  font-family: var(--font-mono);
+}
+
+.filter-result-records {
+  font-size: 0.8rem;
+  color: var(--color-primary-500);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filter-group label {
+  color: var(--color-gray-500);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-group select {
+  background: var(--color-gray-50);
+  border: var(--border-light);
+  color: var(--color-gray-800);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all var(--transition-base);
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.filter-group select:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  background: #fff;
+}
+
+/* Botão de limpar filtros */
+.filter-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  background: var(--color-danger-50);
+  border: 1px solid var(--color-danger-100);
+  border-radius: var(--radius-md);
+  color: var(--color-danger-500);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.filter-clear-btn:hover {
+  background: var(--color-danger-100);
+  border-color: var(--color-danger-500);
+}
+
+/* Botão que abre/fecha os filtros */
+.filters-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  background: var(--surface-card);
+  border: var(--border-light);
+  border-radius: var(--radius-lg);
+  color: var(--color-gray-600);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-sans);
+}
+
+.filters-toggle-btn:hover,
+.filters-toggle-btn.open {
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+}
+
+.filters-toggle-btn.has-active {
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+}
+
+.filters-badge {
+  background: var(--color-primary-500);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+
+/* Toggle bar/line */
+.chart-mode-toggle {
+  display: flex;
+  background: var(--surface-card);
+  border: var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--color-gray-500);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-sans);
+}
+
+.chart-mode-btn.active {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.chart-mode-btn:hover:not(.active) {
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
+}
+
+/* Labels de ranking */
+.ranking-section__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.875rem;
+  margin-top: 1rem;
+}
+
+.ranking-section__label--above { color: var(--color-success-700); }
+.ranking-section__label--below { color: var(--color-danger-500); }
+
+/* Cores de texto */
+.text-emerald { color: var(--color-success-500); }
+.text-rose    { color: var(--color-danger-500); }
+
+/* Fix do container dos charts Recharts */
+.analytics__bars {
+  position: relative;
+  width: 100%;
+}
