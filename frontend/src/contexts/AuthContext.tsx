@@ -36,9 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await api.login(email, password);
-    const profile = await api.getProfile();
+    const token = api.getToken()!;
+    const payload = JSON.parse(atob(token.split('.')[1]));
     setIsAuthenticated(true);
-    setUser({ email: profile.email, role: 'USER', id: profile.userId, nome: profile.nome });
+    setUser({ email: payload.email, role: payload.role, id: payload.sub, nome: payload.name });
   };
 
   const logout = () => {
