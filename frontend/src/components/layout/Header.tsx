@@ -1,5 +1,6 @@
 import { Search, Bell } from 'lucide-react';
 import './Header.css';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
   title: string;
@@ -7,6 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+  const { user } = useAuth(); // Utilize o hook useAuth para obter o usuário logado
   return (
     <header className="header">
       <div className="header__left">
@@ -39,11 +41,12 @@ export function Header({ title, subtitle }: HeaderProps) {
 
         <div className="header__user">
           <div className="header__avatar">
-            <span>A</span>
+            {/* Renderiza a primeira letra do email do usuário */}
+            <span>{user?.email?.charAt(0) || 'fake'}</span>
           </div>
           <div className="header__user-info">
-            <span className="header__user-name">Admin</span>
-            <span className="header__user-role">admin@email.com</span>
+            {/* <span className="header__user-name">{user?.nome || 'Usuário fake'}</span> */}
+            <span className="header__user-role">{user?.email || 'Email fake'}</span>
           </div>
         </div>
       </div>
