@@ -48,7 +48,7 @@ export function LoginPage() {
               id="login-email"
               type="email"
               className="login__input"
-              placeholder="admin@email.com"
+              placeholder="Email ..."
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -61,7 +61,7 @@ export function LoginPage() {
               id="login-password"
               type="password"
               className="login__input"
-              placeholder="••••••••"
+              placeholder="Password ..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
