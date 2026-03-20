@@ -6,6 +6,8 @@ import { DashboardPage } from './pages/Dashboard';
 import { AnalyticsPage } from './pages/Analytics';
 import { UsersPage } from './pages/Users';
 import { ProfilePage } from './pages/Profile';
+import { HomePage } from './pages/Home';
+import { RegisterPage } from './pages/Register';
 import './styles/global.css';
 
 function ProtectedRoutes() {
@@ -39,10 +41,15 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
       />
+      <Route
+        path="/register"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />}
+      />
+      <Route path="/" element={<HomePage />} />
       <Route element={<ProtectedRoutes />}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/profile" element={<ProfilePage />} />

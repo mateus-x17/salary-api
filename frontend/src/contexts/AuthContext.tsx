@@ -6,6 +6,7 @@ interface AuthContextType {
   isLoading: boolean;
   user: { email: string; role: string, id: string, nome: string } | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (payload: any) => Promise<void>;
   logout: () => void;
 }
 
@@ -42,6 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({ email: payload.email, role: payload.role, id: payload.sub, nome: payload.name });
   };
 
+  const register = async (userData: any) => {
+    await api.register(userData);
+    // After registration, auto-login
+    await login(userData.email, userData.password);
+  };
+
   const logout = () => {
     api.logout();
     setIsAuthenticated(false);
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

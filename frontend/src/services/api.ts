@@ -61,10 +61,10 @@ class ApiService {
     return data;
   }
 
-  async register(name: string, email: string, password: string) {
+  async register(payload: any) {
     return this.request<{ id: string; email: string; role: string }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -145,7 +145,22 @@ class ApiService {
     if (params.stackId) qs.set('stackId', params.stackId);
     if (params.cityId) qs.set('cityId', params.cityId);
     if (params.experienceLevel) qs.set('experienceLevel', params.experienceLevel);
-    return this.request(`/analytics/salary/filter?${qs.toString()}`);
+    return this.request<{ averageSalary: number; totalRecords: number }>(`/analytics/salary/filter?${qs.toString()}`);
+  }
+
+  async getChartByLevel(experienceLevel?: string) {
+    const qs = experienceLevel ? `?experienceLevel=${experienceLevel}` : '';
+    return this.request<{ stack: string; averageSalary: number; totalRecords: number }[]>(`/analytics/charts/by-level${qs}`);
+  }
+
+  async getChartByCity(cityId?: string) {
+    const qs = cityId ? `?cityId=${cityId}` : '';
+    return this.request<{ stack: string; averageSalary: number; totalRecords: number }[]>(`/analytics/charts/by-city${qs}`);
+  }
+
+  async getChartByStack(stackId?: string) {
+    const qs = stackId ? `?stackId=${stackId}` : '';
+    return this.request<{ experienceLevel: string; label: string; averageSalary: number; totalRecords: number }[]>(`/analytics/charts/by-stack${qs}`);
   }
 
   async getStackRanking() {
@@ -154,15 +169,24 @@ class ApiService {
     );
   }
 
+  async getCityRankings() {
+    return this.request<{ 
+      above: { city: string; averageSalary: number; totalRecords: number }[],
+      below: { city: string; averageSalary: number; totalRecords: number }[]
+    }>('/analytics/ranking/cities');
+  }
+
   // ── Admin ──
   async listUsers() {
-    return this.request<{
-      id: string;
-      name: string;
-      email: string;
-      role: string;
-      createdAt: string;
-    }[]>('/admin/users');
+    return this.request<any[]>('/admin/users');
+  }
+
+  async updateUser(id: string, data: any) {
+    return this.request(`/admin/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
   }
   async countUsers() {
     return this.request<{ count: number }>('/admin/users/count');

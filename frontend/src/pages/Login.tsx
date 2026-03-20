@@ -82,6 +82,12 @@ export function LoginPage() {
           </button>
         </form>
 
+        <div className="login__footer-nav" style={{ textAlign: 'center', marginTop: '1.5rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--color-gray-600)' }}>
+            Ainda não tem conta? <a href="/register" style={{ color: 'var(--color-primary-600)', fontWeight: 600, textDecoration: 'none' }}>Registre-se aqui</a>
+          </p>
+        </div>
+
         <p className="login__footer">
           Tech Salary Intelligence API &middot; v1.0
         </p>
