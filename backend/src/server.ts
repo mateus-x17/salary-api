@@ -5,6 +5,7 @@ import { setupWebsocket } from './websocket/socket';
 async function start() {
   try {
     setupWebsocket(app.server);
+    app.log.info('WebSocket server iniciado'); // confirmação de que o WebSocket foi configurado
 
     await app.listen({ port: env.PORT, host: '0.0.0.0' });
     app.log.info(`Server is running at http://localhost:${env.PORT}`);
