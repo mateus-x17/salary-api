@@ -81,6 +81,7 @@ export class ProfileService {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
+        user: true, // <-- adicione o join com User
       },
     });
 
@@ -94,6 +95,8 @@ export class ProfileService {
       experienceLevel: profile.experienceLevel,
       stacks: profile.profileStacks.map((ps) => ps.stack.name),
       currentSalary: profile.salaryHistories[0]?.salary || 0,
+      email: profile.user.email,   // <-- adicione
+      nome: profile.user.name,     // <-- adicione (ajuste para o campo real do seu schema)
     };
   }
 
