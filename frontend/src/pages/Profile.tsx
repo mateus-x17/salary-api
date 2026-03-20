@@ -9,6 +9,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { StacksModal } from '../components/StacksModal';
 import './Profile.css';
 
 interface ProfileData {
@@ -24,41 +25,69 @@ interface SalaryEntry {
   createdAt: string;
 }
 
+// Interface usada pelo modal (precisa de id + name)
+interface StackItem {
+  id: string;
+  name: string;
+}
+
 export function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [history, setHistory] = useState<SalaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profileStacks, setProfileStacks] = useState<StackItem[]>([]);
+
+  async function loadProfile() {
+    try {
+      const [p, h] = await Promise.all([
+        api.getProfile(),
+        api.getSalaryHistory(),
+      ]);
+      setProfile(p);
+      setHistory(Array.isArray(h) ? h : []);
+    } catch {
+      // Fallback demo
+      setProfile({
+        userId: '1',
+        city: 'São Paulo',
+        experienceLevel: 'SENIOR',
+        stacks: ['React', 'Node.js', 'TypeScript'],
+        currentSalary: 12000,
+      });
+      setHistory([
+        { salary: 7000, createdAt: '2024-01-10T00:00:00Z' },
+        { salary: 8500, createdAt: '2024-06-02T00:00:00Z' },
+        { salary: 10000, createdAt: '2025-01-01T00:00:00Z' },
+        { salary: 12000, createdAt: '2025-07-15T00:00:00Z' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [p, h] = await Promise.all([
-          api.getProfile(),
-          api.getSalaryHistory(),
-        ]);
-        setProfile(p);
-        setHistory(Array.isArray(h) ? h : []);
-      } catch {
-        // Fallback demo
-        setProfile({
-          userId: '1',
-          city: 'São Paulo',
-          experienceLevel: 'SENIOR',
-          stacks: ['React', 'Node.js', 'TypeScript'],
-          currentSalary: 12000,
-        });
-        setHistory([
-          { salary: 7000, createdAt: '2024-01-10T00:00:00Z' },
-          { salary: 8500, createdAt: '2024-06-02T00:00:00Z' },
-          { salary: 10000, createdAt: '2025-01-01T00:00:00Z' },
-          { salary: 12000, createdAt: '2025-07-15T00:00:00Z' },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadProfile();
   }, []);
+
+  async function handleOpenModal() {
+    // Busca as stacks do perfil com id + name para passar ao modal
+    try {
+      const stacks = await api.getProfileStacks();
+      setProfileStacks(stacks);
+    } catch {
+      // Se falhar, usa os nomes do profile como fallback (sem id real)
+      setProfileStacks(
+        (profile?.stacks || []).map((name, i) => ({ id: String(i), name }))
+      );
+    }
+    setIsModalOpen(true);
+  }
+
+  // Chamado pelo modal após qualquer adição ou remoção
+  async function handleStacksChanged() {
+    await loadProfile();
+  }
 
   const formatCurrency = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -127,7 +156,11 @@ export function ProfilePage() {
               </h3>
               <p className="profile__panel-sub">{profile?.stacks.length} tecnologias</p>
             </div>
-            <button className="profile__add-btn" id="add-stack-btn">
+            <button
+              className="profile__add-btn"
+              id="add-stack-btn"
+              onClick={handleOpenModal}
+            >
               <Plus size={16} />
               <span>Adicionar</span>
             </button>
@@ -157,7 +190,6 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {/* Simple bar chart */}
           <div className="salary-chart">
             {history.map((entry, i) => (
               <div key={i} className="salary-chart__item" style={{ animationDelay: `${i * 100}ms` }}>
@@ -174,6 +206,14 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de gerenciamento de stacks */}
+      <StacksModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        profileStacks={profileStacks}
+        onStacksChanged={handleStacksChanged}
+      />
     </div>
   );
 }
