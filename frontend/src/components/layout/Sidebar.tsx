@@ -11,14 +11,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Sidebar.css';
 
 const navItemsADM = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/users', icon: Users, label: 'Usuários' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
 
 const navItemsUSU = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
@@ -29,7 +29,7 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       {/* Logo */}
-      <div className="sidebar__logo">
+      <NavLink to="/dashboard" className="sidebar__logo" style={{ textDecoration: 'none' }}>
         <div className="sidebar__logo-icon">
           <TrendingUp size={22} strokeWidth={2.5} />
         </div>
@@ -37,7 +37,7 @@ export function Sidebar() {
           <span className="sidebar__logo-name">Salary</span>
           <span className="sidebar__logo-sub">Intelligence</span>
         </div>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className="sidebar__nav">

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Search, Pencil, X, Save } from 'lucide-react';
 import { api } from '../services/api';
+import LoadingState from '../components/LoadingState';
 import './Users.css';
 import './Users-sidebar.css';
 
@@ -157,10 +158,8 @@ export function UsersPage() {
       {/* Table */}
       <div className="users-table-wrapper">
         {loading ? (
-          <div className="users-table__loading">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="skeleton" style={{ height: 56, marginBottom: 8, borderRadius: 12 }} />
-            ))}
+          <div style={{ height: 400, display: 'flex' }}>
+            <LoadingState message="Buscando lista de usuários..." />
           </div>
         ) : (
           <table className="users-table" id="users-table">

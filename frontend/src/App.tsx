@@ -8,23 +8,14 @@ import { UsersPage } from './pages/Users';
 import { ProfilePage } from './pages/Profile';
 import { HomePage } from './pages/Home';
 import { RegisterPage } from './pages/Register';
+import LoadingState from './components/LoadingState';
 import './styles/global.css';
 
 function ProtectedRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--surface-bg)',
-      }}>
-        <div className="skeleton" style={{ width: 200, height: 32 }} />
-      </div>
-    );
+    return <LoadingState message="Restaurando sua sessão..." />;
   }
 
   if (!isAuthenticated) {

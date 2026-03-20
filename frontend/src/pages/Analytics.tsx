@@ -23,6 +23,7 @@ import {
   Cell,
 } from 'recharts';
 import { api } from '../services/api';
+import LoadingState from '../components/LoadingState';
 import './Analytics.css';
 import './Analytics-filters.css';
 
@@ -242,6 +243,10 @@ export function AnalyticsPage() {
   const formatCurrency = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
+  if (loading && !globalAvg) {
+    return <LoadingState message="Buscando estatísticas e rankings..." />;
+  }
+
   return (
     <div className="analytics">
       {/* ── Header ── */}
@@ -370,7 +375,7 @@ export function AnalyticsPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 {chartMode === 'bar' ? (
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 30, bottom: 5 }}>
+                  <BarChart data={chartData as any} margin={{ top: 10, right: 20, left: 30, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-gray-100)" vertical={false} />
                     <XAxis
                       dataKey={chartDataKey}
@@ -395,7 +400,7 @@ export function AnalyticsPage() {
                     </Bar>
                   </BarChart>
                 ) : (
-                  <LineChart data={chartData} margin={{ top: 10, right: 20, left: 30, bottom: 5 }}>
+                  <LineChart data={chartData as any} margin={{ top: 10, right: 20, left: 30, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-gray-100)" vertical={false} />
                     <XAxis
                       dataKey={chartDataKey}
