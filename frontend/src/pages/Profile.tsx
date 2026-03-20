@@ -50,16 +50,24 @@ export function ProfilePage() {
         api.getSalaryHistory(),
       ]);
       setProfile(p);
+      console.log('Profile data:', p);
       setHistory(Array.isArray(h) ? h : []);
     } catch {
-      setProfile({
-        userId: user?.id ?? '1',
-        city: 'São Paulo',
+      // Fallback com dados fake para desenvolvimento local ou em caso de erro
+      console.warn('Erro ao carregar perfil do admin (ele não existe), usando dados fake');
+      const userFake = {
+        id: 'idFaked',
+        email: 'fake@email.com',
+        nome: 'Usuário fake',
+        role: 'USER',
+        city: 'cidadeFaked',
         experienceLevel: 'SENIOR',
-        stacks: ['React', 'Node.js', 'TypeScript'],
+        stacks: ['faked', 'faked2', 'faked3'],
         currentSalary: 12000,
-        email: user?.email ?? 'demo@email.com',
-        nome: user?.nome ?? 'Usuário',
+      };
+      setProfile({
+        ...userFake,
+        userId: userFake.id,
       });
       setHistory([
         { salary: 7000, createdAt: '2024-01-10T00:00:00Z' },
@@ -100,7 +108,7 @@ export function ProfilePage() {
 
   const expLabels: Record<string, string> = {
     JUNIOR: 'Júnior (0-2 anos)',
-    PLENO: 'Pleno (3-5 anos)',
+    MID: 'Pleno (3-5 anos)',
     SENIOR: 'Sênior (6-10 anos)',
     STAFF_PLUS: 'Staff+ (10+ anos)',
   };
@@ -149,7 +157,7 @@ export function ProfilePage() {
             <Briefcase size={16} />
             <span>
               {profile?.experienceLevel
-                ? expLabels[profile.experienceLevel] || profile.experienceLevel
+                ? expLabels[profile.experienceLevel] 
                 : 'N/A'}
             </span>
           </div>

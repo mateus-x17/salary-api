@@ -35,26 +35,28 @@ export function AnalyticsPage() {
         setStacks(Array.isArray(s) ? s : []);
         setCities(Array.isArray(c) ? c : []);
       } catch {
+        // fallback com dados fake para desenvolvimento local ou em caso de erro
+        console.warn('Erro ao carregar analytics, usando dados fake');
         setGlobalAvg(8500);
         setRanking([
-          { stack: 'Go', averageSalary: 13500, totalRecords: 18 },
-          { stack: 'React', averageSalary: 12000, totalRecords: 45 },
-          { stack: 'Node.js', averageSalary: 11500, totalRecords: 38 },
-          { stack: 'TypeScript', averageSalary: 11200, totalRecords: 52 },
-          { stack: 'Python', averageSalary: 10800, totalRecords: 33 },
-          { stack: 'Java', averageSalary: 10200, totalRecords: 29 },
-          { stack: 'Rust', averageSalary: 14000, totalRecords: 8 },
-          { stack: 'Kotlin', averageSalary: 9800, totalRecords: 15 },
+          { stack: 'fake1', averageSalary: 13500, totalRecords: 18 },
+          { stack: 'fake2', averageSalary: 12000, totalRecords: 45 },
+          { stack: 'fake3', averageSalary: 11500, totalRecords: 38 },
+          { stack: 'fake4', averageSalary: 11200, totalRecords: 52 },
+          { stack: 'fake5', averageSalary: 10800, totalRecords: 33 },
+          { stack: 'fake6', averageSalary: 10200, totalRecords: 29 },
+          { stack: 'fake7', averageSalary: 14000, totalRecords: 8 },
+          { stack: 'fake8', averageSalary: 9800, totalRecords: 15 },
         ]);
         setStacks([
-          { id: '1', name: 'React' },
-          { id: '2', name: 'Node.js' },
-          { id: '3', name: 'TypeScript' },
+          { id: '1', name: 'fake1' },
+          { id: '2', name: 'fake2' },
+          { id: '3', name: 'fake3' },
         ]);
         setCities([
-          { id: '1', name: 'São Paulo', state: 'SP' },
-          { id: '2', name: 'Belo Horizonte', state: 'MG' },
-          { id: '3', name: 'Rio de Janeiro', state: 'RJ' },
+          { id: '1', name: 'fake1', state: 'SP' },
+          { id: '2', name: 'fake2', state: 'MG' },
+          { id: '3', name: 'fake3', state: 'RJ' },
         ]);
       } finally {
         setLoading(false);

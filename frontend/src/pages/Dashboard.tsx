@@ -43,19 +43,21 @@ export function DashboardPage() {
           api.getStackRanking(),
           api.countUsers(),
         ]);
+        console.log('🔍 dashboard data:', { g, r, uc }); // retorno da api
         setGlobalAvg(g.averageSalary);
         setRanking(Array.isArray(r) ? r : []);
         setUsersCount(uc.count);
       } catch {
-        // fallback
+        // fallback com dados fake para desenvolvimento local ou em caso de erro
+        console.warn('Erro ao carregar dashboard, usando dados fake');
         setGlobalAvg(8500);
         setRanking([
-          { stack: 'React', averageSalary: 12000, totalRecords: 45 },
-          { stack: 'Node.js', averageSalary: 11500, totalRecords: 38 },
-          { stack: 'TypeScript', averageSalary: 11200, totalRecords: 52 },
-          { stack: 'Python', averageSalary: 10800, totalRecords: 33 },
-          { stack: 'Go', averageSalary: 13500, totalRecords: 18 },
-          { stack: 'Java', averageSalary: 10200, totalRecords: 29 },
+          { stack: 'fake1', averageSalary: 12000, totalRecords: 45 },
+          { stack: 'fake2', averageSalary: 11500, totalRecords: 38 },
+          { stack: 'fake3', averageSalary: 11200, totalRecords: 52 },
+          { stack: 'fake4', averageSalary: 10800, totalRecords: 33 },
+          { stack: 'fake5', averageSalary: 13500, totalRecords: 18 },
+          { stack: 'fake6', averageSalary: 10200, totalRecords: 29 },
         ]);
       } finally {
         setLoading(false);
@@ -91,7 +93,7 @@ export function DashboardPage() {
     },
     {
       label: 'Stacks Ativas',
-      value: String(ranking.length || 12),
+      value: String(ranking.length || '...'),
       change: '+3%',
       up: true,
       icon: <BarChart3 size={22} />,
