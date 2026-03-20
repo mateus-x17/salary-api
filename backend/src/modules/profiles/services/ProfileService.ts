@@ -3,6 +3,21 @@ import { CreateProfileDTO } from '../dtos/CreateProfileDTO';
 import { UpdateProfileDTO } from '../dtos/UpdateProfileDTO';
 import { AppError } from '../../../shared/errors/AppError';
 
+/**
+ * Atualiza todas as Materialized Views de analytics.
+ * Deve ser chamado sempre que dados que alimentam as views mudarem
+ * (ex: adição ou remoção de stacks do perfil).
+ *
+ * CONCURRENTLY permite que a view seja lida durante o refresh,
+ * mas exige que a view tenha um índice único. Se não tiver, remova
+ * o CONCURRENTLY e aceite o lock breve durante o refresh.
+ */
+async function refreshAnalyticsViews() {
+  await prisma.$executeRawUnsafe(`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_salary_by_stack;`);
+  await prisma.$executeRawUnsafe(`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_salary_global;`);
+  await prisma.$executeRawUnsafe(`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_salary_filtered;`);
+}
+
 export class ProfileService {
   /**
    * RN-04: Cada usuário possui apenas 1 perfil.
@@ -22,7 +37,6 @@ export class ProfileService {
       throw new AppError('Cidade não encontrada', 'CITY_NOT_FOUND', 404);
     }
 
-    // Usando transaction para garantir a consistência das duas operações
     const profile = await prisma.$transaction(async (tx) => {
       const newProfile = await tx.professionalProfile.create({
         data: {
@@ -65,7 +79,7 @@ export class ProfileService {
         },
         salaryHistories: {
           orderBy: { createdAt: 'desc' },
-          take: 1, // Pega apenas o último salário (mais recente)
+          take: 1,
         },
       },
     });
@@ -88,7 +102,7 @@ export class ProfileService {
    */
   async updateProfile(userId: string, data: UpdateProfileDTO) {
     const profile = await prisma.professionalProfile.findUnique({ where: { userId } });
-    
+
     if (!profile) {
       throw new AppError('Perfil não encontrado', 'PROFILE_NOT_FOUND', 404);
     }
@@ -111,10 +125,11 @@ export class ProfileService {
 
   /**
    * Adiciona uma stack ao perfil do usuário (RN-05).
+   * Após a operação, atualiza as Materialized Views de analytics.
    */
   async addStack(userId: string, stackId: string) {
     const profile = await prisma.professionalProfile.findUnique({ where: { userId } });
-    
+
     if (!profile) {
       throw new AppError('Perfil não encontrado', 'PROFILE_NOT_FOUND', 404);
     }
@@ -143,14 +158,18 @@ export class ProfileService {
         stackId,
       },
     });
+
+    // Atualiza as Materialized Views para refletir a nova associação
+    await refreshAnalyticsViews();
   }
 
   /**
    * Remove uma stack associada ao perfil.
+   * Após a operação, atualiza as Materialized Views de analytics.
    */
   async removeStack(userId: string, stackId: string) {
     const profile = await prisma.professionalProfile.findUnique({ where: { userId } });
-    
+
     if (!profile) {
       throw new AppError('Perfil não encontrado', 'PROFILE_NOT_FOUND', 404);
     }
@@ -165,6 +184,9 @@ export class ProfileService {
     }).catch(() => {
       throw new AppError('Associação de stack não encontrada', 'ASSOCIATION_NOT_FOUND', 404);
     });
+
+    // Atualiza as Materialized Views para refletir a remoção
+    await refreshAnalyticsViews();
   }
 
   /**
