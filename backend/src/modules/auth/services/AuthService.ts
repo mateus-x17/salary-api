@@ -25,28 +25,40 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(data.password, salt);
 
     // Identificar ou criar a cidade fornecida
-    let cityRecord = await prisma.city.findFirst({
-      where: { name: { equals: data.city, mode: 'insensitive' } },
-    });
-    
-    if (!cityRecord) {
-      cityRecord = await prisma.city.create({
-        data: { name: data.city, state: 'N/A', country: 'Brasil' },
-      });
-    }
+      let cityRecord;
+      if (data.cityId) {
+        cityRecord = await prisma.city.findUnique({
+          where: { id: data.cityId },
+        });
+
+        if (!cityRecord) {
+          throw new AppError('Cidade não encontrada', 'CITY_NOT_FOUND', 404);
+        }
+      } else {
+        cityRecord = await prisma.city.findFirst({
+          where: { name: { equals: data.city, mode: 'insensitive' } },
+        });
+
+        if (!cityRecord) {
+          cityRecord = await prisma.city.create({
+            data: {
+              name: data.city!,
+              state: 'N/A',
+              country: 'Brasil',
+            },
+          });
+        }
+      }
 
     // Identificar ou criar as stacks
-    const stackRecords = await Promise.all(
-      data.stacks.map(async (stackName) => {
-        let stackRecord = await prisma.stack.findFirst({
-          where: { name: { equals: stackName, mode: 'insensitive' } },
-        });
-        if (!stackRecord) {
-          stackRecord = await prisma.stack.create({ data: { name: stackName } });
-        }
-        return stackRecord;
-      })
-    );
+    // 🔥 AGORA BUSCA POR IDs
+    const stackRecords = await prisma.stack.findMany({
+      where: { id: { in: data.stacks } },
+    });
+    // validação extra (evita ID inválido silencioso)
+    if (stackRecords.length !== data.stacks.length) {
+      throw new AppError('Uma ou mais stacks são inválidas', 'INVALID_STACKS', 400);
+    }
 
     const user = await prisma.$transaction(async (tx) => {
       // 1. Cria usuário
@@ -77,14 +89,12 @@ export class AuthService {
       });
 
       // 4. Associa stacks ao perfil (RN-05)
-      for (const st of stackRecords) {
-        await tx.profileStack.create({
-          data: {
-            profileId: newProfile.id,
-            stackId: st.id,
-          },
-        });
-      }
+      await tx.profileStack.createMany({
+        data: stackRecords.map((st) => ({
+          profileId: newProfile.id,
+          stackId: st.id,
+        })),
+      }); // otimização: createMany para reduzir queries
 
       return {
         id: newUser.id,
@@ -123,11 +133,11 @@ export class AuthService {
       throw new AppError('Credenciais inválidas', 'INVALID_CREDENTIALS', 401);
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role, email: user.email },
-      env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN }
-    );
+  const token = jwt.sign(
+    { id: user.id, role: user.role, email: user.email },
+    env.JWT_SECRET,
+    { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
+  ); // correção do tipo de expiresIn
 
     return { token };
   }

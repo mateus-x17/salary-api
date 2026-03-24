@@ -4,48 +4,69 @@ export class RegisterDTO {
   name!: string;
   email!: string;
   password!: string;
-  city!: string;
-  experienceLevel!: string;
+
+  city?: string;
+  cityId?: string;
+
+  experienceLevel!: 'JUNIOR' | 'MID' | 'SENIOR' | 'STAFF_PLUS' |'LEAD'; // padrão de experiência unificado
+
   salary!: number;
+
+  // agora sempre IDs
   stacks!: string[];
-  role!: string;
+
+  role!: 'USER' | 'ADMIN';
 
   constructor(data: any) {
     this.name = data.name;
     this.email = data.email;
     this.password = data.password;
+
     this.city = data.city;
-    this.experienceLevel = data.experience_level || data.experienceLevel;
-    this.salary = data.salary;
+    this.cityId = data.cityId;
+
+    // 🔥 NORMALIZAÇÃO INTELIGENTE
+    const exp = data.experience_level || data.experienceLevel;
+    this.experienceLevel = typeof exp === 'string' ? exp.toUpperCase() : exp;
+
+    // 🔥 GARANTE NUMBER
+    this.salary = typeof data.salary === 'string'
+      ? Number(data.salary)
+      : data.salary;
+
     this.stacks = data.stacks || [];
-    this.role = data.role || 'USER';
+    this.role = data.role === 'ADMIN' ? 'ADMIN' : 'USER';
   }
 
-  /**
-   * Valida os campos obrigatórios do registro.
-   * Lança AppError caso um campo falhe.
-   */
   validate() {
-    if (!this.name || typeof this.name !== 'string' || this.name.trim().length === 0) {
+    if (!this.name?.trim()) {
       throw new AppError('Nome é obrigatório', 'VALIDATION_ERROR');
     }
-    if (!this.email || typeof this.email !== 'string' || !/^\S+@\S+\.\S+$/.test(this.email)) {
+
+    if (!this.email || !/^\S+@\S+\.\S+$/.test(this.email)) {
       throw new AppError('Email inválido', 'VALIDATION_ERROR');
     }
-    if (!this.password || typeof this.password !== 'string' || this.password.length < 6) {
-      throw new AppError('A senha deve conter no mínimo 6 caracteres', 'VALIDATION_ERROR');
+
+    if (!this.password || this.password.length < 6) {
+      throw new AppError('Senha deve ter no mínimo 6 caracteres', 'VALIDATION_ERROR');
     }
-    if (!this.city || typeof this.city !== 'string') {
-      throw new AppError('Cidade é obrigatória', 'VALIDATION_ERROR');
+
+    // AGORA ACEITA city OU cityId - pois a cidade pode ser criada no cadastro de perfil ou o usuário pode escolher uma existente (usando o id)
+    if (!this.city && !this.cityId) {
+      throw new AppError('Cidade ou cityId é obrigatório', 'VALIDATION_ERROR');
     }
-    if (!this.experienceLevel || !['JUNIOR', 'MID', 'SENIOR', 'LEAD'].includes(this.experienceLevel)) {
+
+    // validação do nível de experiência unificado
+    if (!['JUNIOR', 'MID', 'SENIOR', 'STAFF_PLUS', 'LEAD'].includes(this.experienceLevel)) {
       throw new AppError('Nível de experiência inválido', 'VALIDATION_ERROR');
-    }
-    if (this.salary === undefined || typeof this.salary !== 'number' || this.salary < 0) {
+    } 
+
+    if (typeof this.salary !== 'number' || isNaN(this.salary) || this.salary < 0) {
       throw new AppError('Salário inválido', 'VALIDATION_ERROR');
     }
-    if (!Array.isArray(this.stacks)) {
-      throw new AppError('Stacks devem ser um array', 'VALIDATION_ERROR');
+
+    if (!Array.isArray(this.stacks) || this.stacks.length === 0) {
+      throw new AppError('Stacks devem ser um array de IDs', 'VALIDATION_ERROR');
     }
   }
 }
