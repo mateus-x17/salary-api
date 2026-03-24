@@ -61,8 +61,15 @@ class ApiService {
     return data;
   }
 
-  async register(payload: any) {
-    return this.request<{ id: string; email: string; role: string }>('/auth/register', {
+  // async register(payload: any) {
+  //   return this.request<{ id: string; email: string; role: string }>('/auth/register', {
+  //     method: 'POST',
+  //     body: JSON.stringify(payload),
+  //   });
+  // }
+    async register(payload: any) {
+      console.log('Enviando payload para registro:', payload);
+    return this.request<{ cityId: string; email: string; experience_level: string; name: string; password: string; role: string, salary: number, stacks: string[]  }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
