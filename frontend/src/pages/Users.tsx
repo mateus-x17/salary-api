@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Search, Pencil, X, Save } from 'lucide-react';
 import { api } from '../services/api';
 import LoadingState from '../components/LoadingState';
+import { Toast, type ToastData } from '../components/Toast';
 import './Users.css';
 import './Users-sidebar.css';
 
@@ -13,31 +14,67 @@ interface UserRow {
   createdAt: string;
   profile?: {
     experienceLevel: string;
-    city?: { name: string };
+    city?: { id?: string; name: string };
     salaryHistories: { salary: number }[];
-    profileStacks: { stack: { name: string } }[];
-  }
+    profileStacks: { stack: { id?: string; name: string } }[];
+  };
 }
+
+interface Stack {
+  id: string;
+  name: string;
+}
+
+interface City {
+  id: string;
+  name: string;
+  state: string;
+  country: string;
+}
+
+const EXPERIENCE_LEVELS = [
+  { value: 'JUNIOR', label: 'Júnior (0–2 anos)' },
+  { value: 'MID', label: 'Pleno (3–5 anos)' },
+  { value: 'SENIOR', label: 'Sênior (6–10 anos)' },
+  { value: 'STAFF_PLUS', label: 'Staff / Principal (10+ anos)' },
+  { value: 'LEAD', label: 'Tech Lead / Management' },
+];
 
 export function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [stacksList, setStacksList] = useState<{ id: string; name: string }[]>([]);
+
+  // Listas vindas do banco
+  const [stacksList, setStacksList] = useState<Stack[]>([]);
+  const [citiesList, setCitiesList] = useState<City[]>([]);
 
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: '', email: '', role: '', experienceLevel: '', salary: '', city: '', stacks: ''
+    name: '',
+    email: '',
+    role: 'USER',
+    experienceLevel: 'MID',
+    salary: '',
+    cityId: '',           // ID da cidade selecionada
+    stacks: [] as string[], // IDs das stacks selecionadas
   });
+  const [toast, setToast] = useState<ToastData | null>(null);
 
+  /* ── Carga inicial: usuários + stacks + cidades ── */
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, stacks] = await Promise.all([api.listUsers(), api.listStacks()]);
+      const [data, stacks, cities] = await Promise.all([
+        api.listUsers(),
+        api.listStacks(),
+        api.listCities(),
+      ]);
       setUsers(Array.isArray(data) ? data : []);
       setStacksList(Array.isArray(stacks) ? stacks : []);
+      setCitiesList(Array.isArray(cities) ? cities : []);
     } catch {
       // Fallback demo data
       setUsers([
@@ -53,12 +90,11 @@ export function UsersPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
+  /* ── Filtro de tabela ── */
   const filtered = users.filter(
-    (u) =>
+    u =>
       (u.name.toLowerCase().includes(search.toLowerCase()) ||
         u.email.toLowerCase().includes(search.toLowerCase())) &&
       (roleFilter === '' || u.role === roleFilter)
@@ -67,38 +103,87 @@ export function UsersPage() {
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  /* ── Abre modal de edição ── */
   function handleEditClick(user: UserRow) {
     setEditingUser(user);
     const p = user.profile;
+
+    // Tenta resolver o ID da cidade a partir do nome (caso o backend retorne só o nome)
+    const cityName = p?.city?.name || '';
+    const matchedCity = citiesList.find(
+      c => c.name.toLowerCase() === cityName.toLowerCase()
+    );
+    const cityId = p?.city?.id || matchedCity?.id || '';
+
+    // Resolve IDs das stacks do perfil
+    const profileStackIds = (p?.profileStacks || []).map(ps => {
+      const id = ps.stack?.id;
+      if (id) return id;
+      // fallback: busca pelo nome na lista
+      const found = stacksList.find(
+        s => s.name.toLowerCase() === ps.stack?.name?.toLowerCase()
+      );
+      return found?.id || '';
+    }).filter(Boolean);
+
     setEditForm({
       name: user.name || '',
       email: user.email || '',
       role: user.role || 'USER',
       experienceLevel: p?.experienceLevel || 'MID',
       salary: p?.salaryHistories?.[0]?.salary?.toString() || '',
-      city: p?.city?.name || '',
-      stacks: p?.profileStacks?.map(ps => ps.stack?.name).filter(Boolean).join(', ') || ''
+      cityId,
+      stacks: profileStackIds,
     });
   }
 
+  /* ── Alterna stack selecionada ── */
+  function toggleStack(id: string) {
+    setEditForm(prev => ({
+      ...prev,
+      stacks: prev.stacks.includes(id)
+        ? prev.stacks.filter(s => s !== id)
+        : [...prev.stacks, id],
+    }));
+  }
+
+  /* ── Salva edição ── */
   async function handleSaveEdit() {
     if (!editingUser) return;
     setIsSaving(true);
     try {
+      const selectedCity = citiesList.find(c => c.id === editForm.cityId);
+
+      // 🔥 CONVERSÃO CRÍTICA (ID → NAME)
+      const selectedStacksNames = editForm.stacks
+        .map(id => stacksList.find(s => s.id === id)?.name)
+        .filter((name): name is string => Boolean(name));
+
       await api.updateUser(editingUser.id, {
         name: editForm.name,
         email: editForm.email,
         role: editForm.role,
         experienceLevel: editForm.experienceLevel,
         salary: Number(editForm.salary),
-        city: editForm.city,
-        stacks: editForm.stacks.split(',').map(s => s.trim()).filter(Boolean)
+        cityId: editForm.cityId || undefined,
+        city: selectedCity?.name || undefined,
+        stacks: selectedStacksNames, // ✅ CORRETO AGORA
+      });
+
+      setToast({
+        type: 'success',
+        title: `Usuário ${editingUser.name} atualizado`,
+        message: 'As informações foram salvas com sucesso.',
       });
       setEditingUser(null);
       await load();
     } catch (err) {
       console.error('Erro ao editar', err);
-      alert('Houve um erro ao atualizar os dados.');
+      setToast({
+        type: 'error',
+        title: 'Erro ao atualizar',
+        message: `Não foi possível salvar as alterações ${editingUser.name}.`,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -106,7 +191,7 @@ export function UsersPage() {
 
   return (
     <div className="users-page">
-      {/* Title */}
+      {/* Header */}
       <div className="users-page__header">
         <div>
           <h2 className="users-page__title">Usuários Cadastrados</h2>
@@ -124,11 +209,11 @@ export function UsersPage() {
             placeholder="Buscar por nome ou email..."
             className="users-page__search-input"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             id="users-search"
           />
         </div>
-        <button className="users-page__filter-btn" id="users-filter-btn" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+        <button className="users-page__filter-btn" style={{ padding: 0, background: 'transparent', border: 'none' }}>
           <select
             id="users-role-filter"
             value={roleFilter}
@@ -178,9 +263,7 @@ export function UsersPage() {
                 <tr key={user.id} className="users-table__row" style={{ animationDelay: `${i * 50}ms` }}>
                   <td>
                     <div className="users-table__user">
-                      <div className="users-table__avatar" style={{
-                        background: `hsl(${(i * 47) % 360}, 55%, 60%)`
-                      }}>
+                      <div className="users-table__avatar" style={{ background: `hsl(${(i * 47) % 360}, 55%, 60%)` }}>
                         {user.name.charAt(0)}
                       </div>
                       <span className="users-table__name">{user.name}</span>
@@ -214,7 +297,7 @@ export function UsersPage() {
         <span className="users-page__pagination-info">Página 1 de 1</span>
       </div>
 
-      {/* Edit Sidebar Overlay */}
+      {/* Overlay */}
       {editingUser && (
         <div className="sidebar-overlay" onClick={() => setEditingUser(null)} />
       )}
@@ -227,102 +310,169 @@ export function UsersPage() {
             <X size={20} />
           </button>
         </div>
-        
+
         <div className="edit-sidebar__content">
+
+          {/* Nome */}
           <div className="form-group row">
             <label>Nome Completo</label>
-            <input 
-              type="text" 
-              value={editForm.name} 
-              onChange={e => setEditForm({...editForm, name: e.target.value})} 
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={e => setEditForm({ ...editForm, name: e.target.value })}
             />
           </div>
+
+          {/* Email */}
           <div className="form-group row">
             <label>E-mail Corporativo</label>
-            <input 
-              type="email" 
-              value={editForm.email} 
-              onChange={e => setEditForm({...editForm, email: e.target.value})} 
+            <input
+              type="email"
+              value={editForm.email}
+              onChange={e => setEditForm({ ...editForm, email: e.target.value })}
             />
           </div>
-          
+
+          {/* Role */}
           <div className="form-group row">
             <label>Nível de Acesso (Role)</label>
-            <select value={editForm.role} onChange={e => setEditForm({...editForm, role: e.target.value})}>
+            <select
+              value={editForm.role}
+              onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+            >
               <option value="USER">Usuário</option>
               <option value="ADMIN">Administrador</option>
             </select>
           </div>
 
+          {/* Cidade — select dinâmico */}
           <div className="form-group row">
-            <label>Localização (Cidade/UF)</label>
-            <input 
-              type="text" 
-              placeholder="Ex: São Paulo"
-              value={editForm.city} 
-              onChange={e => setEditForm({...editForm, city: e.target.value})} 
-            />
+            <label>Localização (Cidade)</label>
+            {citiesList.length > 0 ? (
+              <select
+                value={editForm.cityId}
+                onChange={e => setEditForm({ ...editForm, cityId: e.target.value })}
+              >
+                <option value="">Selecione a cidade...</option>
+                {citiesList.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} — {c.state}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Cidades não disponíveis"
+                disabled
+                style={{ opacity: 0.5 }}
+              />
+            )}
           </div>
 
+          {/* Nível de Experiência — select com valores do sistema */}
           <div className="form-group row">
             <label>Nível de Experiência</label>
-            <select value={editForm.experienceLevel} onChange={e => setEditForm({...editForm, experienceLevel: e.target.value})}>
-              <option value="JUNIOR">Júnior (0-2 anos)</option>
-              <option value="MID">Pleno (3-5 anos)</option>
-              <option value="SENIOR">Sênior (6-10 anos)</option>
-              <option value="STAFF_PLUS">Staff/Principal (10+ anos)</option>
-              <option value="LEAD">Tech Lead / Management</option>
+            <select
+              value={editForm.experienceLevel}
+              onChange={e => setEditForm({ ...editForm, experienceLevel: e.target.value })}
+            >
+              {EXPERIENCE_LEVELS.map(l => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
             </select>
           </div>
 
+          {/* Salário */}
           <div className="form-group row">
             <label>Salário Atual (R$)</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               placeholder="12000"
-              value={editForm.salary} 
-              onChange={e => setEditForm({...editForm, salary: e.target.value})} 
+              value={editForm.salary}
+              onChange={e => setEditForm({ ...editForm, salary: e.target.value })}
             />
           </div>
 
+          {/* Stacks — chips selecionáveis vindos do banco */}
           <div className="form-group row">
             <label>Stacks Principais</label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              {editForm.stacks.split(',').map(s => s.trim()).filter(Boolean).map(s => (
-                <span key={s} style={{ background: 'var(--color-primary-100)', color: 'var(--color-primary-800)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {s}
-                  <X size={14} style={{cursor: 'pointer'}} onClick={() => {
-                    const newStacks = editForm.stacks.split(',').map(x=>x.trim()).filter(x => x && x !== s).join(', ');
-                    setEditForm({...editForm, stacks: newStacks});
-                  }} />
-                </span>
-              ))}
-            </div>
-            <select
-              value=""
-              onChange={e => {
-                if (!e.target.value) return;
-                const current = editForm.stacks.split(',').map(s=>s.trim()).filter(Boolean);
-                if (!current.includes(e.target.value)) {
-                  setEditForm({...editForm, stacks: [...current, e.target.value].join(', ')});
-                }
-              }}
-            >
-              <option value="">Adicionar stack...</option>
-              {stacksList.map(s => (
-                <option key={s.id} value={s.name}>{s.name}</option>
-              ))}
-            </select>
+
+            {/* Chips selecionadas */}
+            {editForm.stacks.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                {editForm.stacks.map(id => {
+                  const stack = stacksList.find(s => s.id === id);
+                  if (!stack) return null;
+                  return (
+                    <span
+                      key={id}
+                      style={{
+                        background: 'var(--color-primary-100)',
+                        color: 'var(--color-primary-800)',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      {stack.name}
+                      <X
+                        size={14}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => toggleStack(id)}
+                      />
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Select para adicionar */}
+            {stacksList.length > 0 ? (
+              <select
+                value=""
+                onChange={e => {
+                  if (e.target.value) toggleStack(e.target.value);
+                }}
+              >
+                <option value="">Adicionar stack...</option>
+                {stacksList
+                  .filter(s => !editForm.stacks.includes(s.id))
+                  .map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Stacks não disponíveis"
+                disabled
+                style={{ opacity: 0.5 }}
+              />
+            )}
           </div>
         </div>
 
         <div className="edit-sidebar__footer">
-          <button className="btn-secondary" onClick={() => setEditingUser(null)}>Cancelar</button>
+          <button className="btn-secondary" onClick={() => setEditingUser(null)}>
+            Cancelar
+          </button>
           <button className="btn-primary" onClick={handleSaveEdit} disabled={isSaving}>
             {isSaving ? 'Salvando...' : <><Save size={16} /> Salvar Alterações</>}
           </button>
         </div>
       </div>
+      {toast && (
+        <Toast
+          type={toast.type}
+          title={toast.title}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
